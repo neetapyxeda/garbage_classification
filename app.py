@@ -14,6 +14,7 @@ IMG_ADDRESS = "https://t4.ftcdn.net/jpg/03/56/69/55/360_F_356695553_DGCg4F6KpySg
 IMAGE_NAME = "user_image.png"
 CLASS_LABEL = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 CLASS_LABEL.sort()
+CONTAMINATION_DIFFERENCE = 0.4
 
 
 @st.cache_resource
@@ -49,6 +50,20 @@ def featurization(image_path, model):
     return predictions
 
 
+def extract_indexes(prob_list: list) -> tuple:
+    process_list = prob_list.copy()
+    # sort the list
+    process_list.sort(reverse = True)
+    first_prob, second_prob = process_list[0], process_list[1]
+    # get indexes
+    first_index = prob_list.index(first_prob)
+    second_index = prob_list.index(second_prob)
+
+
+    return ((first_prob, second_prob), (first_index, second_index))
+
+
+
 # get the featurization model
 ConvNeXtXLarge_featurized_model = get_ConvNeXtXLarge_model()
 # load ultrasound image
@@ -78,6 +93,17 @@ if image:
     #get the features
     with st.spinner("Processing......."):
         image_features = featurization(IMAGE_NAME, ConvNeXtXLarge_featurized_model)
-        model_predict = classification_model.predict(image_features)
-        result_label = CLASS_LABEL[model_predict[0]]
-        st.success(f"Prediction: {result_label}")
+        probs = classification_model.predict_proba(image_features)
+        pred_probs, pred_index = extract_indexes(list(probs[0]))
+        st.subheader("Classification Status")
+        st.success(f"Waste Type: {CLASS_LABEL[pred_index[0]]}")
+        st.subheader("Contamination Status")
+        if (pred_probs[0] - pred_probs[1]) < CONTAMINATION_DIFFERENCE:
+            st.success(f"Contaminated: {CLASS_LABEL[pred_index[0]]} and {CLASS_LABEL[pred_index[1]]}")
+        else:
+            st.success("Not Contaminated")
+        
+
+
+
+   
