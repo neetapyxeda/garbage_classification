@@ -1,2 +1,7 @@
 scikit-learn==1.6.0
+streamlit
+Authlib==1.5.2
+google-auth==2.39.0
+google-cloud-storage==3.1.0
 tensorflow==2.18.0
+numpy
